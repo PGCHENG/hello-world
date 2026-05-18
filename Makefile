@@ -1,11 +1,25 @@
 OUT = hello
 DIR = $(shell pwd)/src
 SRCS = $(DIR)/*.c
-OBJS = $(SRCS: .c = .o)
+OBJS = $(SRCS:.c=.o)
+HELLO_OBJS = $(DIR)/hello.o
 
-all : $(OUT)
-$(OUT) : $(OBJS)
-	gcc $^ -o $@ 
+KDIR ?= /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
 
-clean :
-	rm -rf $(OUT)
+.PHONY: all clean module test dmesg
+
+all: module test
+
+module:
+	$(MAKE) -C $(KDIR) M=$(PWD)/src modules
+
+test: $(DIR)/test.c
+	gcc -o test_hello $(DIR)/test.c
+
+clean:
+	$(MAKE) -C $(KDIR) M=$(PWD)/src clean
+	rm -f test_hello
+
+dmesg:
+	dmesg | tail -20
